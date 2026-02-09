@@ -10,7 +10,7 @@ export default function Page() {
         cache: 'no-store'
       })
       setData(await res.json())
-    }, 1000)
+    }, 5000)
 
     return () => clearInterval(timer)
   }, [])
