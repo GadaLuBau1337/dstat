@@ -1,56 +1,36 @@
-"use client";
+'use client'
+import { useEffect, useState } from 'react'
 
-import { useEffect, useState } from "react";
-
-export default function Home() {
-  const [data, setData] = useState([]);
-  const [status, setStatus] = useState("NORMAL");
+export default function Page() {
+  const [data, setData] = useState(null)
 
   useEffect(() => {
-    const interval = setInterval(async () => {
-      const res = await fetch("/api/traffic");
-      const json = await res.json();
+    const timer = setInterval(async () => {
+      const res = await fetch('/api/traffic', {
+        cache: 'no-store'
+      })
+      setData(await res.json())
+    }, 1000)
 
-      setData((prev) => [...prev.slice(-30), json]);
+    return () => clearInterval(timer)
+  }, [])
 
-      if (json.rps >= 50) setStatus("SPIKE");
-      else if (json.rps >= 15) setStatus("HIGH");
-      else setStatus("NORMAL");
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, []);
+  if (!data) return <h1 style={{ padding: 40 }}>Loading…</h1>
 
   return (
-    <main style={{ background: "#000", color: "#fff", minHeight: "100vh", padding: 24 }}>
-      <h1 style={{ fontSize: 28, fontWeight: "bold" }}>DSTAT Network</h1>
-      <p style={{ color: "#aaa" }}>Public Website Traffic Monitor (per second)</p>
+    <main style={{ padding: 40 }}>
+      <h1>DSTAT NETWORK</h1>
+      <h2>RPS: {data.rps}</h2>
 
-      <h2
-        style={{
-          marginTop: 20,
-          color:
-            status === "SPIKE"
-              ? "red"
-              : status === "HIGH"
-              ? "orange"
-              : "lime",
-        }}
-      >
-        STATUS: {status}
-      </h2>
+      <p>Allowed: {data.allowed}</p>
+      <p>Rate Limited: {data.rate_limited}</p>
+      <p>Blocked: {data.blocked}</p>
 
-      <div style={{ marginTop: 20 }}>
-        {data.map((d, i) => (
-          <div key={i}>
-            {d.time} — {d.rps} req/s
-          </div>
-        ))}
-      </div>
+      <h3>ATTACK LEVEL: {data.attack}</h3>
 
-      <p style={{ marginTop: 30, fontSize: 12, color: "#666" }}>
-        * Data hanya traffic ke website ini
+      <p style={{ opacity: 0.6, marginTop: 30 }}>
+        Application-level traffic after edge filtering
       </p>
     </main>
-  );
+  )
 }
