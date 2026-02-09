@@ -1,6 +1,5 @@
 {
-  "name": "dstat",
-  "version": "1.0.0",
+  "name": "dstat-network",
   "private": true,
   "scripts": {
     "dev": "next dev",
