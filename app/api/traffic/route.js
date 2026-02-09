@@ -1,29 +1,42 @@
-let currentSecond = Math.floor(Date.now() / 1000);
-let counter = 0;
+export const runtime = 'edge'
 
-export async function GET() {
-  const now = Math.floor(Date.now() / 1000);
-
-  if (now !== currentSecond) {
-    currentSecond = now;
-    counter = 0;
-  }
-
-  return Response.json({
-    time: new Date().toLocaleTimeString(),
-    rps: counter,
-  });
+let bucket = {
+  second: Date.now(),
+  rps: 0,
+  allowed: 0,
+  rate_limited: 0,
+  blocked: 0
 }
 
-export async function POST() {
-  const now = Math.floor(Date.now() / 1000);
+export async function GET(req) {
+  const status =
+    req.headers.get('x-dstat-status') || 'allowed'
 
-  if (now !== currentSecond) {
-    currentSecond = now;
-    counter = 0;
+  const now = Date.now()
+
+  if (now - bucket.second >= 1000) {
+    bucket.second = now
+    bucket.rps = 0
   }
 
-  counter++;
+  bucket.rps++
+  bucket[status]++
 
-  return new Response("OK");
+  let attack = 'NORMAL'
+  if (bucket.rps > 50) attack = 'ELEVATED'
+  if (bucket.rps > 150) attack = 'HIGH'
+  if (bucket.rps > 300) attack = 'SEVERE'
+
+  return new Response(
+    JSON.stringify({
+      rps: bucket.rps,
+      allowed: bucket.allowed,
+      rate_limited: bucket.rate_limited,
+      blocked: bucket.blocked,
+      attack
+    }),
+    {
+      headers: { 'content-type': 'application/json' }
+    }
+  )
 }
